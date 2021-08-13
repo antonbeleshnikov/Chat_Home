@@ -50,6 +50,20 @@ public class Server {
         }
     }
 
+    public void privateMessage (ClientHandler sender, String receiver, String message) {
+        String format_message = String.format("[ %s ] to [ %s ]: %s",sender.getNickname(), receiver, message);
+        for (ClientHandler c: clients) {
+            if (c.getNickname().equals(receiver)) {
+                c.sendMessage(format_message);
+                if (!c.equals(sender)) {
+                    sender.sendMessage(format_message);
+                }
+                return;
+            }
+        }
+        sender.sendMessage("Not found user: " + receiver);
+    }
+
     public void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
     }
