@@ -33,8 +33,7 @@ public class Server {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             try {
                 server.close();
             } catch (IOException e) {
@@ -43,16 +42,16 @@ public class Server {
         }
     }
 
-    public void broadcastMessage (ClientHandler sender, String message) {
-        String format_message = String.format("[ %s ]: %s",sender.getNickname(), message);
-        for (ClientHandler c: clients) {
+    public void broadcastMessage(ClientHandler sender, String message) {
+        String format_message = String.format("[ %s ]: %s", sender.getNickname(), message);
+        for (ClientHandler c : clients) {
             c.sendMessage(format_message);
         }
     }
 
-    public void privateMessage (ClientHandler sender, String receiver, String message) {
-        String format_message = String.format("[ %s ] to [ %s ]: %s",sender.getNickname(), receiver, message);
-        for (ClientHandler c: clients) {
+    public void privateMessage(ClientHandler sender, String receiver, String message) {
+        String format_message = String.format("[ %s ] to [ %s ]: %s", sender.getNickname(), receiver, message);
+        for (ClientHandler c : clients) {
             if (c.getNickname().equals(receiver)) {
                 c.sendMessage(format_message);
                 if (!c.equals(sender)) {
@@ -64,11 +63,34 @@ public class Server {
         sender.sendMessage("Not found user: " + receiver);
     }
 
+    public boolean isLoginAuthorised(String login) {
+        for (ClientHandler c : clients) {
+            if (c.getLogin().equals(login)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void broadcastClientList() {
+        StringBuilder sb = new StringBuilder("/clientList");
+        for (ClientHandler c : clients) {
+            sb.append(" ").append(c.getNickname());
+        }
+
+        String message = sb.toString();
+        for (ClientHandler c : clients) {
+            c.sendMessage(message);
+        }
+    }
+
     public void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
+        broadcastClientList();
     }
 
     public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
+        broadcastClientList();
     }
 }
