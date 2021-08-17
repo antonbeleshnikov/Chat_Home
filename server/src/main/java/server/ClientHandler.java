@@ -13,6 +13,7 @@ public class ClientHandler {
 
     private boolean authenticated;
     private String nickname;
+    private String login;
 
     public ClientHandler(Socket socket, Server server) {
 
@@ -37,13 +38,32 @@ public class ClientHandler {
                                 nickname = server
                                         .getAuthService()
                                         .getNicknameByLoginAndPassword(token[1], token[2]);
+                                login = token[1];
                                 if (nickname != null) {
-                                    server.subscribe(this);
-                                    authenticated = true;
-                                    sendMessage("/authok " + nickname);
-                                    break;
+                                    if (!server.isLoginAuthorised(login)) {
+                                        sendMessage("/authok " + nickname);
+                                        server.subscribe(this);
+                                        authenticated = true;
+                                        break;
+                                    } else {
+                                        sendMessage("С этим логином уже вошли");
+                                    }
                                 } else {
                                     sendMessage("Неверный логин/пароль");
+                                }
+                            }
+                            if (str.startsWith("/reg ")) {
+                                String[] token = str.split("\\s");
+                                if (token.length < 4) {
+                                    continue;
+                                }
+
+                                boolean regOk = server.getAuthService()
+                                        .registration(token[1],token[2],token[3]);
+                                if (regOk) {
+                                    sendMessage("/regYes");
+                                } else {
+                                    sendMessage("/regNo");
                                 }
                             }
                     }
@@ -93,5 +113,9 @@ public class ClientHandler {
 
     public String getNickname() {
         return nickname;
+    }
+
+    public String getLogin() {
+        return login;
     }
 }
