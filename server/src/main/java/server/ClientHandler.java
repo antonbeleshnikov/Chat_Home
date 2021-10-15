@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class ClientHandler {
     Socket socket;
@@ -25,47 +26,48 @@ public class ClientHandler {
             outputStream = new DataOutputStream(socket.getOutputStream());
             new Thread(() -> {
                 try {
+                    socket.setSoTimeout(120000);
                     //цикл аутентификации
                     while (true) {
                         String str = inputStream.readUTF();
-                            if (str.equals("/end")) {
-                                sendMessage("/end");
-                                System.out.println("Клиент отключился");
-                                break;
-                            }
-                            if (str.startsWith("/auth ")) {
-                                String[] token = str.split("\\s");
-                                nickname = server
-                                        .getAuthService()
-                                        .getNicknameByLoginAndPassword(token[1], token[2]);
-                                login = token[1];
-                                if (nickname != null) {
-                                    if (!server.isLoginAuthorised(login)) {
-                                        sendMessage("/authok " + nickname);
-                                        server.subscribe(this);
-                                        authenticated = true;
-                                        break;
-                                    } else {
-                                        sendMessage("С этим логином уже вошли");
-                                    }
+                        if (str.equals("/end")) {
+                            sendMessage("/end");
+                            System.out.println("Клиент отключился");
+                            break;
+                        }
+                        if (str.startsWith("/auth ")) {
+                            String[] token = str.split("\\s");
+                            nickname = server
+                                    .getAuthService()
+                                    .getNicknameByLoginAndPassword(token[1], token[2]);
+                            login = token[1];
+                            if (nickname != null) {
+                                if (!server.isLoginAuthorised(login)) {
+                                    sendMessage("/authok " + nickname);
+                                    server.subscribe(this);
+                                    authenticated = true;
+                                    break;
                                 } else {
-                                    sendMessage("Неверный логин/пароль");
+                                    sendMessage("С этим логином уже вошли");
                                 }
+                            } else {
+                                sendMessage("Неверный логин/пароль");
                             }
-                            if (str.startsWith("/reg ")) {
-                                String[] token = str.split("\\s");
-                                if (token.length < 4) {
-                                    continue;
-                                }
+                        }
+                        if (str.startsWith("/reg ")) {
+                            String[] token = str.split("\\s");
+                            if (token.length < 4) {
+                                continue;
+                            }
 
-                                boolean regOk = server.getAuthService()
-                                        .registration(token[1],token[2],token[3]);
-                                if (regOk) {
-                                    sendMessage("/regYes");
-                                } else {
-                                    sendMessage("/regNo");
-                                }
+                            boolean regOk = server.getAuthService()
+                                    .registration(token[1], token[2], token[3]);
+                            if (regOk) {
+                                sendMessage("/regYes");
+                            } else {
+                                sendMessage("/regNo");
                             }
+                        }
                     }
                     while (authenticated) {
                         String str = inputStream.readUTF();
@@ -77,16 +79,19 @@ public class ClientHandler {
                                 break;
                             }
                             if (str.startsWith("/w")) {
-                                String[] token = str.split("\\s+",3);
-                                if (token.length < 3 ) {
+                                String[] token = str.split("\\s+", 3);
+                                if (token.length < 3) {
                                     continue;
                                 }
-                                server.privateMessage(this, token[1],token[2]);
+                                server.privateMessage(this, token[1], token[2]);
                             }
                         } else {
                             server.broadcastMessage(this, str);
                         }
                     }
+                } catch (SocketTimeoutException e) {
+                    sendMessage("/end");
+                    System.out.println("Клиент отключен по тайм-ауту");
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
@@ -98,6 +103,7 @@ public class ClientHandler {
                     }
                 }
             }).start();
+            socket.setSoTimeout(0);
         } catch (IOException e) {
             e.printStackTrace();
         }
