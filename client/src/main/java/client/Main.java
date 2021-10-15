@@ -16,6 +16,9 @@ public class Main extends Application {
         primaryStage.show();
     }
 
+    /*
+    Фанзиль, добрый день! К сожалению, никак не успеваю сдать 2-ое д/з вовремя, вы вроде говорили, что можно сдать пустой пул-реквест и потом в нем же написать д/з, сделаю так.
+     */
 
     public static void main(String[] args) {
         launch(args);
