@@ -20,20 +20,26 @@ public class Server {
 
     public Server() {
         clients = new CopyOnWriteArrayList<>();
-        authService = new SimpleAuthService();
+//        authService = new SimpleAuthService();
+        //==============//
+        if (!SQLHandler.connect()) {
+            throw new RuntimeException("Не удалось подключиться к БД");
+        }
+        authService = new DBAuthServise();
+        //==============//
         try {
             server = new ServerSocket(PORT);
-            System.out.println("Сервер запущен");
-
+            System.out.println("Server started!");
 
             while (true) {
                 socket = server.accept();
-                System.out.println("Клиент подключился");
+                System.out.println("Client connected");
                 new ClientHandler(socket, this);
             }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
+            SQLHandler.disconnect();
             try {
                 server.close();
             } catch (IOException e) {

@@ -85,6 +85,24 @@ public class ClientHandler {
                                 }
                                 server.privateMessage(this, token[1], token[2]);
                             }
+                            if (str.startsWith("/chnick ")) {
+                                String[] token = str.split("\\s+", 2);
+                                if (token.length < 2) {
+                                    continue;
+                                }
+                                if (token[1].contains(" ")) {
+                                    sendMessage("Ник не может содержать пробелов");
+                                    continue;
+                                }
+                                if (server.getAuthService().changeNick(this.nickname, token[1])) {
+                                    sendMessage("/your nick is " + token[1]);
+                                    sendMessage("Ваш ник изменен на " + token[1]);
+                                    this.nickname = token[1];
+                                    server.broadcastClientList();
+                                } else {
+                                    sendMessage("Не удалось изменить ник. Ник " + token[1] + " уже существует");
+                                }
+                            }
                         } else {
                             server.broadcastMessage(this, str);
                         }
